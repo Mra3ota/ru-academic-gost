@@ -1,0 +1,53 @@
+{
+  "work_type": "kursovaya",
+  "autonomy_mode": "standard",
+  "topic": "Оценка эффективности цифровых коммуникаций брендов на российском рынке",
+  "discipline": "Цифровой маркетинг",
+  "pages": {
+    "min": 20,
+    "max": 25,
+    "target": 23
+  },
+  "oral_speech": {
+    "enabled": false,
+    "duration_minutes": 5,
+    "words_per_minute": 125
+  },
+  "citations": {
+    "style": "footnote",
+    "forbid_tam_zhe_page_top": true,
+    "min_quotes_per_theory_page": 1,
+    "target_quote_share_pct": [10, 20]
+  },
+  "bibliography": {
+    "min_sources": 20,
+    "max_sources": 25,
+    "min_year": 2020,
+    "max_classic_sources": 3,
+    "forbid_untranslated_foreign": true,
+    "npa_first": true,
+    "sort_order": "alphabetical_ru"
+  },
+  "layout": {
+    "font_name": "Times New Roman",
+    "font_size_pt": 14,
+    "line_spacing": 1.5,
+    "first_line_indent_cm": 1.25,
+    "margins_mm": {
+      "left": 30,
+      "right": 15,
+      "top": 20,
+      "bottom": 20
+    },
+    "footnote_font_size_pt": 10,
+    "table_font_size_pt": 12,
+    "include_title_page": true,
+    "include_toc": true,
+    "page_number_position": "bottom_center",
+    "min_lines_last_section_page": 4,
+    "short_table_max_rows": 5
+  },
+  "conclusion_style": "analytical_summary",
+  "student_voice_sample": "",
+  "special_instructions": []
+}

@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.bak
+.DS_Store
+Thumbs.db
+.venv/
+venv/
+sources/
+data/
+drafts/
+output/
+project_contract.json
+project_state.json
+meta.json
