@@ -148,18 +148,23 @@ def analyze_file(
     corpus: list[tuple[str, str, str]],
     before_path: Path | None,
     biblio_count: int | None,
+    biblio_keys: set[str],
     target_chars: int | None,
 ) -> dict[str, Any]:
     raw = fpath.read_text(encoding="utf-8")
     body_md, fn_defs = strip_footnotes_and_markdown(raw)
 
-    # Plain prose excluding headings & markdown table borders for style metrics
+    # Strip display math blocks $$...$$ before prose style analysis so LaTeX never skews metrics
+    body_no_math = re.sub(r"\$\$[\s\S]*?\$\$", " ", body_md)
+
+    # Plain prose excluding headings, images & markdown table borders for style metrics
     prose_lines = [
-        ln for ln in body_md.splitlines()
-        if ln.strip() and not ln.lstrip().startswith(("#", "|", "```", ">"))
+        ln for ln in body_no_math.splitlines()
+        if ln.strip() and not ln.lstrip().startswith(("#", "|", "```", ">", "!["))
     ]
     prose = "\n".join(prose_lines)
     prose_no_fn = re.sub(r"\[\^[^\]]+\]", "", prose)
+    prose_no_fn = re.sub(r"\[@[A-Za-zА-Яа-яЁё0-9_\-][^\]]*\]", "", prose_no_fn)
     prose_no_quotes = re.sub(r"«[^»]{2,400}»", " ", prose_no_fn)
 
     chars_with_spaces = len(re.sub(r"\n{2,}", "\n", prose_no_fn).strip())
@@ -264,6 +269,9 @@ def analyze_file(
         else []
     )
 
+    sym_refs = re.findall(r"@([A-Za-zА-Яа-яЁё0-9_\-]+)", " ".join(re.findall(r"\[(@[^\]]+)\]", body_md)))
+    missing_sym_keys = sorted(set(sym_refs) - biblio_keys) if (biblio_keys and sym_refs) else []
+
     # Local Unicode & homoglyph check
     hidden_uni = find_hidden_unicode(raw)
     homoglyphs = find_homoglyphs(raw)
@@ -323,6 +331,8 @@ def analyze_file(
         failures.append(f"Неиспользуемые определения сносок: {unused_fn_defs}")
     if out_of_range_brackets:
         failures.append(f"Ссылки [N] вне диапазона библиографии 1..{biblio_count}: {out_of_range_brackets}")
+    if missing_sym_keys:
+        failures.append(f"Неопределённые символьные ключи ссылок [@key]: {missing_sym_keys}")
     if unverified_quotes:
         failures.append(f"Неверифицированные прямые цитаты ({len(unverified_quotes)}): {unverified_quotes[:2]}")
     if not facts_ok:
@@ -388,12 +398,20 @@ def analyze_file(
     }
 
 
-def count_biblio_entries(biblio_path: Path | None) -> int | None:
+def parse_biblio_info(biblio_path: Path | None) -> tuple[int | None, set[str]]:
     if not biblio_path or not biblio_path.exists():
-        return None
+        return None, set()
     lines = biblio_path.read_text(encoding="utf-8").splitlines()
+    sym_keys = {
+        m.group(1)
+        for ln in lines
+        for m in [re.match(r"^\s*\[@([A-Za-zА-Яа-яЁё0-9_\-]+)\]\s+\S", ln)]
+        if m
+    }
+    if sym_keys:
+        return len(sym_keys), sym_keys
     entries = [ln for ln in lines if re.match(r"^\s*\d+\.\s+\S", ln)]
-    return len(entries) if entries else None
+    return (len(entries) if entries else None), set()
 
 
 def main() -> int:
@@ -405,14 +423,14 @@ def main() -> int:
     parser.add_argument("--before", default="", help="Snapshot .before.md file for humanizer-facts diff (single file mode)")
     parser.add_argument("--contract", default="", help="Path to project_contract.json")
     parser.add_argument("--extracted", default="", help="Directory drafts/extracted/ for quote grounding")
-    parser.add_argument("--biblio", default="", help="Path to bibliography .md file for [N] range validation")
+    parser.add_argument("--biblio", default="", help="Path to bibliography .md file for [N] / [@key] validation")
     parser.add_argument("--target-chars", type=int, default=0, help="Target characters with spaces for this file")
     parser.add_argument("--json", action="store_true", help="Output JSON report")
     args = parser.parse_args()
 
     contract = load_contract(args.contract)
     corpus = load_extracted_corpus(Path(args.extracted) if args.extracted else None)
-    bib_cnt = count_biblio_entries(Path(args.biblio) if args.biblio else None)
+    bib_cnt, bib_keys = parse_biblio_info(Path(args.biblio) if args.biblio else None)
     before_p = Path(args.before) if args.before else None
 
     results = []
@@ -427,6 +445,7 @@ def main() -> int:
             corpus,
             before_p if len(args.files) == 1 else None,
             bib_cnt,
+            bib_keys,
             args.target_chars if args.target_chars > 0 else None,
         )
         results.append(res)

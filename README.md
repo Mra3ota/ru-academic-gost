@@ -18,12 +18,13 @@
 
 | Скрипт | Назначение |
 |---|---|
-| `scripts/preflight.py` | Диагностика Python-пакетов, `humanizer-ru`, `pandoc`, Word COM / LibreOffice и PyMuPDF |
+| `scripts/preflight.py` | Диагностика Python-пакетов (`matplotlib`, `pymupdf`, `python-docx`, `humanizer-ru`, `pandoc`), Word COM / LibreOffice |
 | `scripts/fetch_sources.py` | Скачивание PDF (КиберЛенинка, `citation_pdf_url`, прямые PDF) и очистка веб-статей с валидацией кириллического текстового слоя |
 | `scripts/parse_pdfs.py` | Колоночный парсинг PDF, расклейка переносов, определение журнальных страниц, MD5/текстовая дедупликация, Exit Gate 1 и `--search` |
-| `scripts/analyze_draft.py` | Проверка бюджета знаков, каскадов `-ение/-ание/-ость`, бан-листа клише, верификация цитат `«...»` по PDF, интеграция `humanizer-ru` |
-| `scripts/build_gost.py` | Сборка ГОСТ `.docx` (Pandoc + in-place OOXML + живое обновление оглавления в Word) |
-| `scripts/audit_docx.py` | 9-пунктовый аудит: заглушки, скрытый Unicode, гомоглифы, пунктуация сносок, библиография (НПА + А–Я с `Ё`=`Е`), страницы, висячие хвосты, `Там же.` вверху страницы, PNG-превью + `--fix` |
+| `scripts/analyze_draft.py` | Проверка бюджета знаков, каскадов `-ение/-ание/-ость`, бан-листа клише, верификация цитат `«...»` по PDF, валидация `[@key]`, интеграция `humanizer-ru` |
+| `scripts/make_chart.py` | Генератор ГОСТ-диаграмм (`bar`, `hbar`, `grouped_bar`, `line`, `pie`) 300 DPI со шрифтом Times New Roman и русскими десятичными запятыми |
+| `scripts/build_gost.py` | Сборка ГОСТ `.docx`: Pandoc + in-place OOXML, авто-реиндексация `[@key, с. X]` → `[N, с. X]`, нумерованные формулы OMML `(1)`, кастомный титульник `--title-template`, живое обновление оглавления в Word |
+| `scripts/audit_docx.py` | 9-пунктовый аудит: заглушки (`{{...}}`, `[@key]`, `____`), скрытый Unicode, гомоглифы, пунктуация сносок, библиография (НПА + А–Я с `Ё`=`Е`), страницы, висячие хвосты, `Там же.` вверху страницы, PNG-превью + `--fix` |
 
 ### Справочники и шаблоны
 

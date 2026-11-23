@@ -116,6 +116,7 @@ DEFAULT_CONTRACT: dict[str, Any] = {
         "footnote_font_size_pt": 10,
         "table_font_size_pt": 12,
         "include_title_page": True,
+        "title_template_path": "",
         "include_toc": True,
         "page_number_position": "bottom_center",
         "min_lines_last_section_page": 4,

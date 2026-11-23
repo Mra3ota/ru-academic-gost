@@ -38,6 +38,7 @@ def main() -> int:
         "python-docx": "docx",
         "lxml": "lxml",
         "pillow": "PIL",
+        "matplotlib": "matplotlib",
     }
     py_status: dict[str, dict[str, object]] = {}
     missing_pip: list[str] = []

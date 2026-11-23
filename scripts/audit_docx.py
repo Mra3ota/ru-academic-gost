@@ -39,6 +39,9 @@ PLACEHOLDER_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"_{3,}"),
     re.compile(r"\[\s*\.\.\.\s*\]"),
     re.compile(r"«\s*\.\.\.\s*»"),
+    re.compile(r"\{\{[A-Za-z0-9_]+\}\}"),
+    re.compile(r"@@GOST_EQ_NUM:[^@]+@@"),
+    re.compile(r"\[@[A-Za-zА-Яа-яЁё0-9_\-]+"),
     re.compile(r"\b(?:TODO|TBD|FIXME|ХХ-000|XX-000|00\.00\.00)\b"),
 ]
 
@@ -391,11 +394,16 @@ def main() -> int:
     all_text = "\n".join(para_texts + table_texts + fn_texts)
     body_text = "\n".join(para_texts)
 
-    # 1. Placeholders
+    # 1. Placeholders (allow legitimate signature/grade/date underlines on custom university title templates)
+    sig_line_re = re.compile(r"(?:оценка|подпись|дата|нормоконтрол|допущен|зачтено|проверил|«_+»)", re.I)
     placeholders: list[str] = []
-    for pat in PLACEHOLDER_PATTERNS:
-        for m in pat.finditer(all_text):
-            placeholders.append(m.group(0))
+    for line in all_text.splitlines():
+        for pat in PLACEHOLDER_PATTERNS:
+            for m in pat.finditer(line):
+                tok = m.group(0)
+                if re.fullmatch(r"_{3,}", tok) and sig_line_re.search(line):
+                    continue
+                placeholders.append(tok)
     c_placeholders = "PASS" if not placeholders else "FAIL"
 
     # 2. Hidden Unicode & Homoglyphs
@@ -461,8 +469,19 @@ def main() -> int:
     else:
         pdf_report["error"] = pdf_engine
 
-    # Direct quote count summary
+    # Direct quote, equation, figure & data-table counts
     quotes_cnt = len(re.findall(r"«[^»]{25,500}»", body_text))
+    eq_tables = 0
+    data_tables = 0
+    for tbl in doc.tables:
+        tblPr = tbl._tbl.tblPr
+        desc = tblPr.find(qn("w:tblDescription")) if tblPr is not None else None
+        dval = desc.get(qn("w:val"), "") if desc is not None else ""
+        if dval == "GOST_EQUATION_LAYOUT":
+            eq_tables += 1
+        elif dval != "CUSTOM_TITLE_TEMPLATE_TABLE":
+            data_tables += 1
+    figures_cnt = len(doc.element.body.findall(f".//{{{W_NS}}}drawing"))
 
     checks = {
         "1_placeholders": c_placeholders,
@@ -485,7 +504,9 @@ def main() -> int:
             "pages": pdf_report.get("total_pages"),
             "headings_h1": len(h1_list),
             "headings_h2": len(h2_list),
-            "tables": len(doc.tables),
+            "tables": data_tables,
+            "equations": eq_tables,
+            "figures": figures_cnt,
             "native_footnotes": len(fn_texts),
             "direct_quotes_ge_25c": quotes_cnt,
             "bibliography_entries": bib_report["count"],
@@ -513,7 +534,8 @@ def main() -> int:
         st = report["stats"]
         print(
             f"  Статистика: стр.={st['pages']}, H1={st['headings_h1']}, H2={st['headings_h2']}, "
-            f"таблиц={st['tables']}, сносок={st['native_footnotes']}, цитат={st['direct_quotes_ge_25c']}, "
+            f"таблиц={st['tables']}, рисунков={st['figures']}, формул={st['equations']}, "
+            f"сносок={st['native_footnotes']}, цитат={st['direct_quotes_ge_25c']}, "
             f"источников={st['bibliography_entries']}"
         )
         print(f"  PDF-движок: {pdf_engine} | PNG-движок: {png_engine} ({len(png_files)} PNG)")

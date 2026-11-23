@@ -51,6 +51,7 @@
     "footnote_font_size_pt": 10,
     "table_font_size_pt": 12,
     "include_title_page": true,
+    "title_template_path": "",
     "include_toc": true,
     "page_number_position": "bottom_center",
     "min_lines_last_section_page": 4,
